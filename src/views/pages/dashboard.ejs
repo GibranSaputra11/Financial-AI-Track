@@ -1,0 +1,219 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+  <!-- Kartu 1: Saldo & Anggaran (Kiri Atas) -->
+  <div class="lg:col-span-6 bg-surface rounded-3xl p-5">
+    <div class="flex items-start justify-between mb-4">
+      <h2 class="text-base font-semibold text-text-main">Saldo & Anggaran</h2>
+      <button id="privacyToggle" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors" title="Sembunyikan Saldo">
+        <i data-lucide="eye" class="w-5 h-5 text-text-muted" id="privacyIcon"></i>
+      </button>
+    </div>
+
+    <div id="balanceDisplay">
+      <p class="text-4xl font-medium tracking-tight tabular-nums text-text-main"><%= wallet.formattedBalance %></p>
+      <p class="text-xs text-text-muted mt-1">Total Saldo Saat Ini</p>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+      <div>
+        <p class="text-xs text-text-muted">Target Bulanan</p>
+        <p class="text-sm font-medium tabular-nums text-text-main"><%= wallet.formattedBudget %></p>
+      </div>
+      <div class="flex gap-2">
+        <a href="/transactions/add?type=income"
+           class="flex-1 bg-brand-forest text-white py-2 rounded-full text-sm font-medium text-center transition-colors hover:bg-green-900">
+          + Tambah Pemasukan
+        </a>
+        <a href="/transactions/add?type=expense"
+           class="flex-1 bg-white border border-gray-300 text-brand-forest py-2 rounded-full text-sm font-medium text-center transition-colors hover:bg-gray-50">
+          + Catat Pengeluaran
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Scan Button -->
+    <a href="/ocr" class="absolute bottom-5 right-5 w-12 h-12 rounded-full bg-brand-lime flex items-center justify-center shadow-lg hover:shadow-xl transition-shadow">
+      <i data-lucide="camera" class="w-6 h-6 text-brand-forest"></i>
+    </a>
+  </div>
+
+  <!-- Kartu 2: Status Akhir Bulan (Kanan Atas - Lime) -->
+  <div class="lg:col-span-6 bg-brand-lime rounded-3xl p-5 relative overflow-hidden">
+    <div class="flex items-center justify-between mb-4">
+      <span class="rounded-full px-3 py-1 text-xs font-semibold <%= status.class %>"><%= status.label %></span>
+      <span class="text-xs text-brand-forest/80">AI Snapshot</span>
+    </div>
+
+    <div class="mb-4">
+      <p class="text-xs text-brand-forest/80 uppercase tracking-wide">Jatah Harian</p>
+      <p class="text-3xl font-medium text-brand-forest tabular-nums"><%= stats.formattedDaily %> / hari</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-2xl bg-black/5 p-3">
+        <p class="text-xs text-brand-forest/80">Sisa Hari</p>
+        <p class="text-base font-semibold text-brand-forest tabular-nums"><%= stats.remainingDays %> Hari</p>
+      </div>
+      <div class="rounded-2xl bg-black/5 p-3">
+        <p class="text-xs text-brand-forest/80">Sisa Anggaran</p>
+        <p class="text-base font-semibold text-brand-forest tabular-nums"><%= stats.formattedRemaining %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kartu 3: Pengeluaran Mahasiswa (Kiri Bawah) -->
+  <div class="lg:col-span-6 bg-surface rounded-3xl p-5">
+    <h2 class="text-base font-semibold text-text-main mb-4">Pengeluaran Mahasiswa</h2>
+    
+    <div class="flex items-center justify-between mb-4">
+      <div class="relative w-36 h-36" style="width: 144px; height: 144px;">
+        <canvas id="donutChart"></canvas>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-center">
+            <p class="text-2xl font-semibold text-text-main tabular-nums"><%= stats.formattedExpense %></p>
+            <p class="text-xs text-text-muted">Total Bulan Ini</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex-1 pl-4">
+        <p class="text-xs text-text-muted mb-2">✨ Insight: Distribusi pengeluaran per kategori</p>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <% chartData.forEach(item => { %>
+        <% if (item.amount > 0) { %>
+          <div class="flex items-center gap-3 py-1">
+            <span class="text-lg"><%= item.icon %></span>
+            <span class="text-sm font-medium text-text-main flex-1"><%= item.category %></span>
+            <span class="text-sm font-medium tabular-nums text-red-500"><%= formatRupiah(item.amount) %></span>
+            <span class="text-xs text-text-muted w-12 text-right"><%= item.percentage %>%</span>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Kartu 4: Rasio Budget Bulanan (Tengah Bawah) -->
+  <div class="lg:col-span-3 bg-surface rounded-3xl p-5">
+    <h2 class="text-base font-semibold text-text-main mb-4">Rasio Budget Bulanan</h2>
+    
+    <div class="mb-3">
+      <div class="flex justify-between text-xs mb-1">
+        <span class="text-text-muted">Terpakai</span>
+        <span class="font-medium text-text-main"><%= ((stats.totalExpense / (wallet.monthlyBudget || 1)) * 100).toFixed(1) %>%</span>
+      </div>
+      <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full bg-brand-lime rounded-full transition-all duration-500" 
+             style="width: <%= Math.min(100, (stats.totalExpense / (wallet.monthlyBudget || 1)) * 100) %>%"></div>
+      </div>
+      <div class="absolute -top-8 right-0 w-2 h-2 rounded-full bg-orange-500" style="transform: translateX(<%= Math.min(100, (stats.totalExpense / (wallet.monthlyBudget || 1)) * 100) %>%);"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 text-center">
+      <div class="rounded-2xl bg-gray-50 p-3">
+        <p class="text-xs text-text-muted">Budget</p>
+        <p class="text-sm font-semibold tabular-nums text-text-main"><%= wallet.formattedBudget %></p>
+      </div>
+      <div class="rounded-2xl bg-gray-50 p-3">
+        <p class="text-xs text-text-muted">Sisa</p>
+        <p class="text-sm font-semibold tabular-nums text-green-600"><%= formatRupiah(Math.max(0, wallet.monthlyBudget - stats.totalExpense)) %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kartu 5: Transaksi & Konfirmasi OCR (Kanan Bawah) -->
+  <div class="lg:col-span-3 bg-surface rounded-3xl p-5">
+    <h2 class="text-base font-semibold text-text-main mb-4">Transaksi Terbaru</h2>
+    
+    <% if (recentTransactions.length === 0) { %>
+      <div class="text-center py-8 text-text-muted">
+        <i data-lucide="receipt" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+        <p class="text-sm">Belum ada transaksi</p>
+        <a href="/transactions/add" class="text-brand-forest hover:underline text-sm mt-2 inline-block">Catat yang pertama</a>
+      </div>
+    <% } else { %>
+      <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+        <% recentTransactions.forEach(tx => { %>
+          <div class="flex items-center gap-3 p-3 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors
+                      <%= tx.receiptUrl ? 'border-brand-lime/50 bg-brand-lime/5' : '' %>">
+            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg"><%= tx.categoryIcon %></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-text-main truncate"><%= tx.merchant || tx.category %></p>
+              <p class="text-xs text-text-muted"><%= tx.formattedDate %> · <%= tx.category %></p>
+            </div>
+            <span class="text-sm font-semibold tabular-nums <%= tx.type === 'income' ? 'text-green-600' : 'text-red-500' %>"><%= tx.formattedAmount %></span>
+          </div>
+        <% }) %>
+      </div>
+      <div class="mt-3 text-center">
+        <a href="/transactions" class="text-sm text-brand-forest hover:underline font-medium">Lihat semua transaksi</a>
+      </div>
+    <% } %>
+  </div>
+
+</div>
+
+<script>
+  // Privacy Toggle
+  const privacyToggle = document.getElementById('privacyToggle');
+  const balanceDisplay = document.getElementById('balanceDisplay');
+  const privacyIcon = document.getElementById('privacyIcon');
+  const realBalance = `<%= wallet.formattedBalance %>`;
+  const hiddenBalance = 'Rp ••••••••••';
+  let isHidden = false;
+
+  privacyToggle.addEventListener('click', () => {
+    isHidden = !isHidden;
+    balanceDisplay.querySelector('p').textContent = isHidden ? hiddenBalance : realBalance;
+    privacyIcon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+    lucide.createIcons();
+  });
+
+  // Donut Chart
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  const chartData = <%- JSON.stringify(chartData.filter(c => c.amount > 0)) %>;
+  
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: chartData.map(d => d.category),
+      datasets: [{
+        data: chartData.map(d => d.amount),
+        backgroundColor: chartData.map(d => {
+          const colors = {
+            'Kos': '#3B82F6',
+            'Makan': '#F97316',
+            'Tugas/Print': '#A855F7',
+            'Nongkrong': '#EC4899',
+            'Transportasi': '#22C55E',
+            'Lainnya': '#9CA3AF'
+          };
+          return colors[d.category] || '#9CA3AF';
+        }),
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '75%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.raw;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${context.label}: Rp ${value.toLocaleString('id-ID')} (${percentage}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

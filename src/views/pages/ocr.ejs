@@ -1,0 +1,207 @@
+<div class="max-w-4xl mx-auto bg-surface rounded-3xl p-6 sm:p-8 shadow-sm">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-text-main">Smart OCR Receipt Scanner</h1>
+      <p class="text-sm text-text-muted mt-1">Unggah foto struk belanja untuk diekstrak otomatis oleh Gemini AI</p>
+    </div>
+    <a href="/dashboard" class="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-text-main hover:bg-gray-50 transition-colors">
+      Kembali
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Kolom Kiri: Upload Area -->
+    <div class="space-y-4">
+      <div id="dropzone" 
+           class="border-2 border-dashed border-gray-300 rounded-3xl p-8 text-center bg-gray-50 hover:bg-gray-100/50 transition-colors cursor-pointer relative overflow-hidden flex flex-col items-center justify-center min-h-[320px]">
+        
+        <input type="file" id="receiptInput" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+        
+        <div id="uploadPlaceholder" class="space-y-3">
+          <div class="w-16 h-16 rounded-2xl bg-brand-lime flex items-center justify-center mx-auto">
+            <i data-lucide="upload-cloud" class="w-8 h-8 text-brand-forest"></i>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-text-main">Seret foto struk ke sini atau <span class="text-brand-forest underline">pilih file</span></p>
+            <p class="text-xs text-text-muted mt-1">Format: JPG, PNG, WebP (Maks. 4MB)</p>
+          </div>
+        </div>
+
+        <div id="previewContainer" class="hidden absolute inset-0 bg-white p-4 flex flex-col items-center justify-center">
+          <img id="imagePreview" src="" alt="Preview" class="max-h-60 rounded-2xl object-contain mb-3">
+          <p id="fileName" class="text-xs text-text-muted truncate max-w-xs"></p>
+        </div>
+
+        <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+          <div class="w-12 h-12 border-4 border-brand-forest border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p class="text-sm font-semibold text-text-main">Gemini AI sedang membaca struk...</p>
+          <p class="text-xs text-text-muted mt-1">Mengekstrak merchant, tanggal, & nominal</p>
+        </div>
+      </div>
+
+      <button id="scanBtn" type="button" disabled
+              class="w-full py-3 rounded-full bg-brand-forest text-white font-medium text-sm opacity-50 cursor-not-allowed
+                     hover:bg-green-900 transition-colors flex items-center justify-center gap-2">
+        <i data-lucide="sparkles" class="w-5 h-5"></i>
+        Scan Struk dengan AI
+      </button>
+    </div>
+
+    <!-- Kolom Kanan: Form Verifikasi Hasil OCR -->
+    <div class="bg-gray-50 rounded-3xl p-6 border border-gray-100 flex flex-col justify-between">
+      <div>
+        <h2 class="text-base font-semibold text-text-main mb-4 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-brand-forest"></i>
+          Verifikasi Hasil Ekstraksi
+        </h2>
+
+        <form id="ocrForm" class="space-y-4">
+          <div>
+            <label for="merchant" class="block text-sm font-medium text-text-main mb-1">Nama Merchant / Toko</label>
+            <input type="text" id="merchant" name="merchant"
+                   class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none"
+                   placeholder="Contoh: Indomaret / Warteg Barokah">
+          </div>
+
+          <div>
+            <label for="amount" class="block text-sm font-medium text-text-main mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
+            <input type="number" id="amount" name="amount" required min="1" step="any"
+                   class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none tabular-nums"
+                   placeholder="25000">
+          </div>
+
+          <div>
+            <label for="category" class="block text-sm font-medium text-text-main mb-1">Kategori <span class="text-red-500">*</span></label>
+            <select id="category" name="category" required
+                    class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none">
+              <option value="Kos">🏠 Kos</option>
+              <option value="Makan" selected>🍜 Makan</option>
+              <option value="Tugas/Print">📄 Tugas/Print</option>
+              <option value="Nongkrong">☕ Nongkrong</option>
+              <option value="Transportasi">🛵 Transportasi</option>
+              <option value="Lainnya">📦 Lainnya</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="transactionDate" class="block text-sm font-medium text-text-main mb-1">Tanggal Transaksi <span class="text-red-500">*</span></label>
+            <input type="date" id="transactionDate" name="transactionDate" required
+                   class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none tabular-nums">
+          </div>
+
+          <div>
+            <label for="description" class="block text-sm font-medium text-text-main mb-1">Keterangan / Catatan</label>
+            <input type="text" id="description" name="description"
+                   class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none"
+                   placeholder="Catatan tambahan (opsional)">
+          </div>
+
+          <button type="submit" id="saveBtn" disabled
+                  class="w-full py-3 rounded-full bg-brand-forest text-white font-medium text-sm opacity-50 cursor-not-allowed
+                         hover:bg-green-900 transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            Simpan Transaksi Pengeluaran
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const receiptInput = document.getElementById('receiptInput');
+  const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+  const previewContainer = document.getElementById('previewContainer');
+  const imagePreview = document.getElementById('imagePreview');
+  const fileName = document.getElementById('fileName');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const scanBtn = document.getElementById('scanBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const ocrForm = document.getElementById('ocrForm');
+
+  let selectedFile = null;
+
+  // Set default date to today
+  document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+
+  receiptInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        fileName.textContent = file.name;
+        uploadPlaceholder.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        scanBtn.disabled = false;
+        scanBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  scanBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('receipt', selectedFile);
+
+    loadingOverlay.classList.remove('hidden');
+    scanBtn.disabled = true;
+
+    try {
+      const response = await fetch('/ocr/scan', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal scan struk');
+
+      document.getElementById('merchant').value = result.data.merchant || '';
+      document.getElementById('amount').value = result.data.amount || '';
+      document.getElementById('category').value = result.data.category || 'Makan';
+      if (result.data.transactionDate) {
+        document.getElementById('transactionDate').value = result.data.transactionDate;
+      }
+      document.getElementById('description').value = result.data.description || '';
+
+      saveBtn.disabled = false;
+      saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      alert('✅ Struk berhasil dibaca oleh Gemini AI!');
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+    } finally {
+      loadingOverlay.classList.add('hidden');
+      scanBtn.disabled = false;
+    }
+  });
+
+  ocrForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = {
+      merchant: document.getElementById('merchant').value,
+      amount: document.getElementById('amount').value,
+      category: document.getElementById('category').value,
+      transactionDate: document.getElementById('transactionDate').value,
+      description: document.getElementById('description').value,
+    };
+
+    try {
+      const response = await fetch('/ocr/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal menyimpan');
+
+      alert('✅ Transaksi pengeluaran dari struk berhasil disimpan!');
+      window.location.href = '/dashboard';
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+    }
+  });
+</script>

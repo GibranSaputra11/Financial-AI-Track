@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Financial AI Track' %></title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#F3F4F6',
+            surface: '#FFFFFF',
+            'brand-forest': '#11381A',
+            'brand-lime': '#A3ED67',
+            'text-main': '#121417',
+            'text-muted': '#7C848D',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #F3F4F6;
+      color: #121417;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-canvas text-text-main min-h-screen flex flex-col justify-between selection:bg-brand-lime selection:text-brand-forest">
+  
+  <div>
+    <% if (locals.user) { %>
+      <%- include('../partials/navbar') %>
+    <% } %>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <%- body %>
+    </main>
+  </div>
+
+  <footer class="bg-surface border-t border-gray-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-text-muted">
+      &copy; 2026 Financial AI Track &bull; Kelompok Barokah 3 &bull; Universitas Muhammadiyah Yogyakarta
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

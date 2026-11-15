@@ -1,0 +1,110 @@
+<div class="max-w-4xl mx-auto bg-surface rounded-3xl p-6 sm:p-8 shadow-sm">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-text-main">Riwayat Transaksi</h1>
+      <p class="text-sm text-text-muted mt-1">Semua catatan pemasukan dan pengeluaran</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/transactions/add?type=income"
+         class="px-4 py-2 rounded-full bg-brand-forest text-white text-sm font-medium hover:bg-green-900 transition-colors flex items-center gap-2">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Pemasukan
+      </a>
+      <a href="/transactions/add?type=expense"
+         class="px-4 py-2 rounded-full border border-gray-200 text-brand-forest text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+        <i data-lucide="minus" class="w-4 h-4"></i>
+        Pengeluaran
+      </a>
+    </div>
+  </div>
+
+  <% if (transactions.length === 0) { %>
+    <div class="text-center py-16">
+      <i data-lucide="receipt-text" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>
+      <p class="text-text-muted">Belum ada transaksi</p>
+      <p class="text-xs text-text-muted mt-1">Mulai catat pemasukan atau pengeluaran pertama</p>
+      <div class="flex gap-2 justify-center mt-4">
+        <a href="/transactions/add?type=income" class="px-4 py-2 rounded-full bg-brand-forest text-white text-sm font-medium hover:bg-green-900">+ Pemasukan</a>
+        <a href="/transactions/add?type=expense" class="px-4 py-2 rounded-full border border-gray-200 text-brand-forest text-sm font-medium hover:bg-gray-50">+ Pengeluaran</a>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-gray-200 text-xs text-text-muted uppercase tracking-wide">
+            <th class="py-3 px-4 font-semibold">Tanggal</th>
+            <th class="py-3 px-4 font-semibold">Kategori</th>
+            <th class="py-3 px-4 font-semibold">Merchant / Keterangan</th>
+            <th class="py-3 px-4 font-semibold text-right">Jumlah</th>
+            <th class="py-3 px-4 font-semibold text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% transactions.forEach(tx => { %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="py-4 px-4 text-sm text-text-main tabular-nums"><%= tx.formattedDate %></td>
+              <td class="py-4 px-4">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium <%= tx.categoryColor %>">
+                  <span><%= tx.categoryIcon %></span>
+                  <%= tx.category %>
+                </span>
+              </td>
+              <td class="py-4 px-4">
+                <p class="text-sm font-medium text-text-main truncate max-w-xs"><%= tx.merchant || tx.category %></p>
+                <% if (tx.description) { %>
+                  <p class="text-xs text-text-muted truncate max-w-xs"><%= tx.description %></p>
+                <% } %>
+              </td>
+              <td class="py-4 px-4 text-right">
+                <span class="text-sm font-semibold tabular-nums <%= tx.type === 'income' ? 'text-green-600' : 'text-red-500' %>">
+                  <%= tx.formattedAmount %>
+                </span>
+              </td>
+              <td class="py-4 px-4 text-right">
+                <button onclick="deleteTransaction(<%= tx.id %>)"
+                        class="text-red-500 hover:text-red-700 text-sm font-medium transition-colors">
+                  Hapus
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+      <div class="flex items-center justify-center gap-2 mt-6">
+        <% if (pagination.hasPrev) { %>
+          <a href="/transactions?page=<%= pagination.currentPage - 1 %>" class="px-3 py-2 rounded-full border border-gray-200 text-sm font-medium text-text-main hover:bg-gray-50">Sebelumnya</a>
+        <% } %>
+        
+        <span class="px-4 py-2 text-sm font-medium text-text-main">
+          Halaman <%= pagination.currentPage %> dari <%= pagination.totalPages %>
+        </span>
+        
+        <% if (pagination.hasNext) { %>
+          <a href="/transactions?page=<%= pagination.currentPage + 1 %>" class="px-3 py-2 rounded-full border border-gray-200 text-sm font-medium text-text-main hover:bg-gray-50">Selanjutnya</a>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
+</div>
+
+<script>
+  async function deleteTransaction(id) {
+    if (!confirm('Yakin ingin menghapus transaksi ini? Saldo akan dikembalikan.')) return;
+
+    try {
+      const response = await fetch('/transactions/' + id, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal menghapus');
+      window.location.reload();
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+    }
+  }
+</script>

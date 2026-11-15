@@ -1,0 +1,174 @@
+<div class="max-w-4xl mx-auto bg-surface rounded-3xl p-6 sm:p-8 shadow-sm">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-text-main">AI Budgeting Advisor</h1>
+      <p class="text-sm text-text-muted mt-1">Analisis sisa anggaran dan rekomendasi pembelanjaan cerdas dari Gemini AI</p>
+    </div>
+    <a href="/dashboard" class="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-text-main hover:bg-gray-50 transition-colors">
+      Kembali
+    </a>
+  </div>
+
+  <!-- Status & Control Card -->
+  <div class="bg-brand-lime rounded-3xl p-6 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div>
+      <p class="text-xs text-brand-forest/80 uppercase tracking-wide mb-1">Sisa Anggaran Saat Ini</p>
+      <p class="text-3xl font-medium text-brand-forest tabular-nums"><%= stats.formattedRemaining %></p>
+      <p class="text-xs text-brand-forest/80 mt-1"><%= stats.remainingDays %> Hari lagi menuju akhir bulan &bull; Jatah ideal: <%= stats.formattedDaily %>/hari</p>
+    </div>
+    <button id="analyzeBtn" 
+            class="px-6 py-3 rounded-full bg-brand-forest text-white font-medium text-sm hover:bg-green-900 transition-colors flex items-center gap-2 shadow-sm">
+      <i data-lucide="sparkles" class="w-5 h-5"></i>
+      ✨ Analisis Keuangan Sekarang
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loadingState" class="hidden text-center py-12">
+    <div class="w-12 h-12 border-4 border-brand-forest border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+    <p class="text-base font-semibold text-text-main">Gemini AI sedang menganalisis pola pengeluaranmu...</p>
+    <p class="text-sm text-text-muted mt-1">Menyiapkan rekomendasi tabel pembelanjaan anti krisis akhir bulan</p>
+  </div>
+
+  <!-- Result Container -->
+  <div id="resultContainer" class="<%= lastAnalysis ? '' : 'hidden' %> space-y-6">
+    <div class="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-semibold text-text-main flex items-center gap-2">
+          <i data-lucide="brain" class="w-5 h-5 text-brand-forest"></i>
+          Rangkuman Analisis AI
+        </h2>
+        <span id="aiStatusBadge" class="rounded-full px-3 py-1 text-xs font-semibold <%= status.class %>"><%= status.label %></span>
+      </div>
+      <p id="summaryText" class="text-sm text-text-main leading-relaxed">
+        <% if (lastAnalysis) { %>
+          <%= lastAnalysis.analysisResultJson.summary %>
+        <% } %>
+      </p>
+      <div class="mt-4 p-4 rounded-2xl bg-white border border-gray-200">
+        <p class="text-xs font-semibold text-text-muted uppercase mb-1">Saran Harian</p>
+        <p id="dailyAdviceText" class="text-sm text-brand-forest font-medium">
+          <% if (lastAnalysis) { %>
+            <%= lastAnalysis.analysisResultJson.dailyAdvice %>
+          <% } %>
+        </p>
+      </div>
+    </div>
+
+    <!-- Tabel Rekomendasi Pembelanjaan -->
+    <div class="bg-surface rounded-3xl border border-gray-200 overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-text-main">Tabel Interaktif Rekomendasi Pembelanjaan</h3>
+        <input type="text" id="filterInput" placeholder="Cari kategori..." 
+               class="px-4 py-2 rounded-full border border-gray-200 text-sm outline-none focus:border-brand-forest">
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-text-muted uppercase">
+              <th class="py-3 px-6 font-semibold">Kategori / Kebutuhan</th>
+              <th class="py-3 px-6 font-semibold">Alokasi Harian (Rp)</th>
+              <th class="py-3 px-6 font-semibold">Estimasi Total Sisa Bulan</th>
+              <th class="py-3 px-6 font-semibold">Saran Penghematan AI</th>
+            </tr>
+          </thead>
+          <tbody id="recommendationTableBody" class="divide-y divide-gray-100 text-sm">
+            <% if (lastAnalysis && lastAnalysis.analysisResultJson.tableRecommendations) { %>
+              <% lastAnalysis.analysisResultJson.tableRecommendations.forEach(item => { %>
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="py-4 px-6 font-medium text-text-main"><%= item.category %></td>
+                  <td class="py-4 px-6 tabular-nums text-text-main"><%= item.dailyAllocation %></td>
+                  <td class="py-4 px-6 tabular-nums text-text-main"><%= item.estimatedMonthlyTotal %></td>
+                  <td class="py-4 px-6">
+                    <span class="rounded-full px-3 py-1 text-xs font-semibold 
+                      <%= item.savingAction === 'Prioritas' ? 'bg-green-100 text-green-800' : item.savingAction === 'Kurangi' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800' %>">
+                      <%= item.savingAction %>
+                    </span>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State if no analysis -->
+  <div id="emptyState" class="<%= lastAnalysis ? 'hidden' : '' %> text-center py-12 text-text-muted">
+    <i data-lucide="sparkles" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+    <p class="text-sm">Belum ada analisis AI yang dibuat untuk bulan ini.</p>
+    <p class="text-xs mt-1">Klik tombol di atas untuk mulai menganalisis kondisi keuanganmu.</p>
+  </div>
+</div>
+
+<script>
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const loadingState = document.getElementById('loadingState');
+  const resultContainer = document.getElementById('resultContainer');
+  const emptyState = document.getElementById('emptyState');
+  const summaryText = document.getElementById('summaryText');
+  const dailyAdviceText = document.getElementById('dailyAdviceText');
+  const recommendationTableBody = document.getElementById('recommendationTableBody');
+  const filterInput = document.getElementById('filterInput');
+
+  analyzeBtn.addEventListener('click', async () => {
+    loadingState.classList.remove('hidden');
+    resultContainer.classList.add('hidden');
+    emptyState.classList.add('hidden');
+    analyzeBtn.disabled = true;
+
+    try {
+      const response = await fetch('/advisor/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Gagal menganalisis');
+
+      const data = result.data;
+      summaryText.textContent = data.summary;
+      dailyAdviceText.textContent = data.dailyAdvice;
+
+      let html = '';
+      data.tableRecommendations.forEach(item => {
+        const badgeClass = item.savingAction === 'Prioritas' ? 'bg-green-100 text-green-800' : 
+                           item.savingAction === 'Kurangi' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
+        html += `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="py-4 px-6 font-medium text-text-main">${item.category}</td>
+            <td class="py-4 px-6 tabular-nums text-text-main">${item.dailyAllocation}</td>
+            <td class="py-4 px-6 tabular-nums text-text-main">${item.estimatedMonthlyTotal}</td>
+            <td class="py-4 px-6">
+              <span class="rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}">
+                ${item.savingAction}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+      recommendationTableBody.innerHTML = html;
+
+      resultContainer.classList.remove('hidden');
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+      emptyState.classList.remove('hidden');
+    } finally {
+      loadingState.classList.add('hidden');
+      analyzeBtn.disabled = false;
+      lucide.createIcons();
+    }
+  });
+
+  // Simple filter
+  filterInput.addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase();
+    const rows = recommendationTableBody.querySelectorAll('tr');
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(keyword) ? '' : 'none';
+    });
+  });
+</script>
