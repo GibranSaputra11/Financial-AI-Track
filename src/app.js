@@ -7,6 +7,7 @@ const sessionMiddleware = require('./config/session');
 const { testConnection } = require('./config/database');
 const { User } = require('./models');
 const multer = require('multer');
+const flash = require('connect-flash');
 
 const expressLayouts = require('express-ejs-layouts');
 
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(sessionMiddleware);
+app.use(flash());
 
 app.use(async (req, res, next) => {
   res.locals.user = null;

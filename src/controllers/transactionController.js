@@ -70,7 +70,7 @@ const postAddTransaction = async (req, res) => {
       return res.redirect('/transactions/add?error=Field wajib diisi&type=' + type);
     }
 
-    const amountNum = parseFloat(amount);
+    const amountNum = parseRupiah(amount);
     if (amountNum <= 0) {
       return res.redirect('/transactions/add?error=Nominal harus > 0&type=' + type);
     }
@@ -112,7 +112,7 @@ const postDeposit = async (req, res) => {
     const userId = req.userId;
     const { amount } = req.body;
 
-    const amountNum = parseFloat(amount);
+    const amountNum = parseRupiah(amount);
     if (!amountNum || amountNum < 1000) {
       return res.redirect('/dashboard?error=Minimal deposit Rp 1.000');
     }
@@ -163,16 +163,10 @@ const deleteTransaction = async (req, res) => {
 
     await transaction.destroy();
 
-    if (req.xhr || req.headers.accept?.includes('application/json')) {
-      return res.json({ success: true });
-    }
-    res.redirect('/transactions?success=Transaksi dihapus');
+    return res.json({ success: true });
   } catch (error) {
     console.error('Delete transaction error:', error);
-    if (req.xhr || req.headers.accept?.includes('application/json')) {
-      return res.status(500).json({ error: 'Gagal menghapus' });
-    }
-    res.redirect('/transactions?error=Gagal menghapus');
+    return res.status(500).json({ error: 'Gagal menghapus' });
   }
 };
 

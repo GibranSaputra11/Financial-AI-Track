@@ -20,9 +20,9 @@
 
     <div>
       <label for="amount" class="block text-sm font-medium text-text-main mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
-      <input type="number" id="amount" name="amount" required min="1" step="any"
+      <input type="text" inputmode="numeric" id="amount" name="amount" required
              class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none tabular-nums"
-             placeholder="<%= type === 'income' ? '1500000' : '25000' %>"
+             placeholder="<%= type === 'income' ? '1.500.000' : '25.000' %>"
              autocomplete="off">
     </div>
 
@@ -74,4 +74,44 @@
 
 <script>
   document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
+
+  // Nominal input: only numbers, auto-format with thousand separators (Indonesian)
+  const amountInput = document.getElementById('amount');
+
+  // Block non-numeric keys (allow: backspace, delete, arrows, tab, home, end)
+  amountInput.addEventListener('keydown', (e) => {
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+    if (allowedKeys.includes(e.key)) return;
+    if (e.key < '0' || e.key > '9') {
+      e.preventDefault();
+    }
+  });
+
+  // Prevent wheel/trackpad zoom from changing value
+  amountInput.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) return; // Allow zoom with Ctrl/Cmd
+    e.preventDefault();
+  }, { passive: false });
+
+  // Format on input: strip dots, then add Indonesian thousand separators
+  amountInput.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\./g, ''); // Remove all dots
+    if (!value) {
+      e.target.value = '';
+      return;
+    }
+    // Only numbers
+    value = value.replace(/\D/g, '');
+    if (!value) {
+      e.target.value = '';
+      return;
+    }
+    // Format with Indonesian locale (thousand separator = dot)
+    e.target.value = Number(value).toLocaleString('id-ID');
+  });
+
+  // On form submit: clean value (remove dots) so server gets pure number
+  document.querySelector('form').addEventListener('submit', () => {
+    amountInput.value = amountInput.value.replace(/\./g, '');
+  });
 </script>

@@ -12,7 +12,8 @@ const formatRupiahSigned = (amount, type) => {
 
 const parseRupiah = (str) => {
   if (!str) return 0;
-  return parseInt(str.replace(/[^\d]/g, ''), 10) || 0;
+  const s = String(str);
+  return parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
 };
 
 const getCategoryIcon = (category) => {

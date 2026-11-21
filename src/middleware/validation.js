@@ -1,4 +1,5 @@
 const { body, validationResult, query } = require('express-validator');
+const { parseRupiah } = require('../utils/helpers');
 
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -30,6 +31,11 @@ const registerValidation = [
   body('confirmPassword')
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Konfirmasi password tidak cocok'),
+  body('monthlyBudget')
+    .optional()
+    .customSanitizer(value => parseRupiah(value))
+    .isFloat({ min: 0 })
+    .withMessage('Budget bulanan tidak valid'),
   validate,
 ];
 
@@ -50,6 +56,7 @@ const transactionValidation = [
     .isIn(['income', 'expense'])
     .withMessage('Tipe transaksi tidak valid'),
   body('amount')
+    .customSanitizer(value => parseRupiah(value))
     .isFloat({ min: 1 })
     .withMessage('Nominal harus lebih dari 0'),
   body('category')
@@ -69,6 +76,7 @@ const transactionValidation = [
 
 const depositValidation = [
   body('amount')
+    .customSanitizer(value => parseRupiah(value))
     .isFloat({ min: 1000 })
     .withMessage('Minimal deposit Rp 1.000'),
   validate,
@@ -81,6 +89,7 @@ const ocrValidation = [
     .isLength({ max: 150 })
     .withMessage('Nama merchant maksimal 150 karakter'),
   body('amount')
+    .customSanitizer(value => parseRupiah(value))
     .isFloat({ min: 1 })
     .withMessage('Nominal harus lebih dari 0'),
   body('category')

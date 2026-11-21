@@ -65,9 +65,10 @@
 
           <div>
             <label for="amount" class="block text-sm font-medium text-text-main mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
-            <input type="number" id="amount" name="amount" required min="1" step="any"
+            <input type="text" inputmode="numeric" id="amount" name="amount" required
                    class="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-text-main focus:border-brand-forest focus:ring-0 outline-none tabular-nums"
-                   placeholder="25000">
+                   placeholder="25.000"
+                   autocomplete="off">
           </div>
 
           <div>
@@ -124,6 +125,50 @@
   // Set default date to today
   document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
 
+  // Nominal input: only numbers, auto-format with thousand separators (Indonesian)
+  const amountInput = document.getElementById('amount');
+
+  // Block non-numeric keys (allow: backspace, delete, arrows, tab, home, end)
+  amountInput.addEventListener('keydown', (e) => {
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+    if (allowedKeys.includes(e.key)) return;
+    if (e.key < '0' || e.key > '9') {
+      e.preventDefault();
+    }
+  });
+
+  // Prevent wheel/trackpad zoom from changing value
+  amountInput.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) return; // Allow zoom with Ctrl/Cmd
+    e.preventDefault();
+  }, { passive: false });
+
+  // Format on input: strip dots, then add Indonesian thousand separators
+  function formatAmountInput(input) {
+    let value = input.value.replace(/\./g, ''); // Remove all dots
+    if (!value) {
+      input.value = '';
+      return;
+    }
+    // Only numbers
+    value = value.replace(/\D/g, '');
+    if (!value) {
+      input.value = '';
+      return;
+    }
+    // Format with Indonesian locale (thousand separator = dot)
+    input.value = Number(value).toLocaleString('id-ID');
+  }
+
+  amountInput.addEventListener('input', (e) => {
+    formatAmountInput(e.target);
+  });
+
+  // Also format initial AI-populated value
+  if (amountInput.value) {
+    formatAmountInput(amountInput);
+  }
+
   receiptInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -161,6 +206,7 @@
 
       document.getElementById('merchant').value = result.data.merchant || '';
       document.getElementById('amount').value = result.data.amount || '';
+      formatAmountInput(document.getElementById('amount'));
       document.getElementById('category').value = result.data.category || 'Makan';
       if (result.data.transactionDate) {
         document.getElementById('transactionDate').value = result.data.transactionDate;
@@ -182,7 +228,7 @@
     e.preventDefault();
     const formData = {
       merchant: document.getElementById('merchant').value,
-      amount: document.getElementById('amount').value,
+      amount: document.getElementById('amount').value.replace(/\./g, ''),
       category: document.getElementById('category').value,
       transactionDate: document.getElementById('transactionDate').value,
       description: document.getElementById('description').value,

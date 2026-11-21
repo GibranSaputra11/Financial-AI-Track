@@ -31,6 +31,8 @@ const postLogin = async (req, res) => {
   }
 };
 
+const { parseRupiah } = require('../utils/helpers');
+
 const getRegisterPage = (req, res) => {
   res.render('pages/register', {
     title: 'Register - Financial AI Track',
@@ -41,7 +43,7 @@ const getRegisterPage = (req, res) => {
 const postRegister = async (req, res) => {
   try {
     const { username, email, password, confirmPassword, monthlyBudget } = req.body;
-    
+
     if (!username || !email || !password) {
       return res.redirect('/register?error=Semua kolom wajib diisi');
     }
@@ -61,12 +63,13 @@ const postRegister = async (req, res) => {
     }
 
     const user = await User.create({ username, email, password });
-    
-    // Create initial wallet
+
+    const budgetNum = parseRupiah(monthlyBudget) || 1500000;
+
     await Wallet.create({
       userId: user.id,
       totalBalance: 0,
-      monthlyBudget: monthlyBudget ? parseFloat(monthlyBudget) : 1500000,
+      monthlyBudget: budgetNum,
     });
 
     res.redirect('/login?success=Registrasi berhasil, silakan login');

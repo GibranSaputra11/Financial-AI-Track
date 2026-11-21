@@ -9,6 +9,7 @@ const {
   formatDate,
   getDailyAllowance,
   getStatusFromBudget,
+  parseRupiah,
 } = require('../utils/helpers');
 const { extractReceiptWithGemini } = require('../services/geminiService');
 
@@ -71,7 +72,7 @@ const postOCRSave = async (req, res) => {
       return res.status(400).json({ error: 'Data tidak lengkap' });
     }
 
-    const amountNum = parseFloat(amount);
+    const amountNum = parseRupiah(amount);
     if (amountNum <= 0) {
       return res.status(400).json({ error: 'Nominal harus > 0' });
     }
